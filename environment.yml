@@ -1,0 +1,10 @@
+name: machine_perception
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10 # open3d not supported for python 3.11
+  - pip
+  - numpy>=1.24
+  - pip:
+      - open3d
+      - wandb
