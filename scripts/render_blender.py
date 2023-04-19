@@ -198,13 +198,30 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
 
     np.save(os.path.join(fp, 'camera.npy'), K)
 
+def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: str, name: str, **kwargs):
+    """
+    Creates one dataset
+    :param input_models_path: path containing all models from shapenet
+    :param num_views_per_obj: number of views (images) for a given object
+    :param output_path: path where the whole dataset should be saved
+    :param name: name of the dataset
+    :param kwargs: additional parameters, passed to function render_obj
+    """
+    np.random.seed(23)
+    all_models = glob.glob(input_models_path + '/*/*/*/*.obj')
+    output_path_name = os.path.join(output_path, name)
+
+    for obj in all_models:
+        print(obj)
+        render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
+
 
 def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):
     """
     Creates train, validation and test datasets
     :param input_models_path: path containing all models from shapenet
     :param num_views_per_obj: number of views (images) for a given object
-    :param output_path: path where the whole dataset should be saved
+    :param output_path: path where all 3 datasets should be saved
     :param split: list of ratios between train, val and test, e.g. [0.7, 0.1, 0.2]
     :param kwargs: additional parameters, passed to function render_obj
     """
@@ -245,5 +262,7 @@ if __name__ == '__main__':
     depth_scale = 0.3
     num_views = 30
     output_path = '../data/images/'
+    name = 'shapenet'
     train_val_test_split = [0.7, 0.1, 0.2]
-    create_datasets(input_path, num_views, output_path, train_val_test_split, depth_scale=depth_scale)
+    create_dataset(input_path, num_views, output_path, name, depth_scale=depth_scale)
+    #create_datasets(input_path, num_views, output_path, train_val_test_split, depth_scale=depth_scale)
