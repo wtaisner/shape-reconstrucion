@@ -1,13 +1,15 @@
 import glob
 import math
 import os
+import multiprocessing as mp
 from typing import List
 
 import bpy
 import numpy as np
 
 
-def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: float = 0.1, scale: int = 1, remove_doubles: bool = True,
+def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: float = 0.1, scale: int = 1,
+               remove_doubles: bool = True,
                edge_split: bool = False, color_depth: int = 8, resolution: int = 600, engine: str = 'BLENDER_EEVEE'):
     """
     Generates rgbd images (rgb + depth) for a given mesh (.obj file path)
@@ -28,7 +30,6 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
     scene = bpy.context.scene
     render = bpy.context.scene.render
     format_img = "PNG"
-
     render.engine = engine
     render.image_settings.color_mode = 'RGBA'  # ('RGB', 'RGBA', ...)
     render.image_settings.color_depth = str(color_depth)  # ('8', '16')
@@ -152,7 +153,7 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
     fp = os.path.abspath(output_folder)
 
     sc = scene.render.resolution_percentage / 100
-    width = scene.render.resolution_x * sc # px
+    width = scene.render.resolution_x * sc  # px
     height = scene.render.resolution_y * sc  # px
     camdata = scene.camera.data
     focal = camdata.lens  # mm
@@ -186,7 +187,7 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
     ], dtype=np.float32)
 
     for i in range(0, num_views):
-        print("Rotation {}, {}".format((stepsize * i), math.radians(stepsize * i)))
+        # print("Rotation {}, {}".format((stepsize * i), math.radians(stepsize * i)))
 
         file_name = f'{model_id_1}_{int(i * stepsize):03d}'
         scene.render.filepath = os.path.join(fp, model_id_0, 'rgb', f'{file_name}0001')
@@ -197,6 +198,7 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
         cam_empty.rotation_euler[2] += math.radians(stepsize)
 
     np.save(os.path.join(fp, 'camera.npy'), K)
+
 
 def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: str, name: str, **kwargs):
     """
@@ -210,10 +212,17 @@ def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: 
     np.random.seed(23)
     all_models = glob.glob(input_models_path + '/*/*/*/*.obj')
     output_path_name = os.path.join(output_path, name)
+    tmp_paths = [output_path_name for _ in range(len(all_models))]
+    tmp_num_views = [num_views_per_obj for _ in range(len(all_models))]
 
-    for obj in all_models:
-        print(obj)
-        render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
+    # ===== slow version =====
+    # for obj in all_models:
+    #     print(obj)
+    #     render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
+
+    # ===== funny version ======
+    with mp.Pool(processes=mp.cpu_count() // 2) as pool:
+        pool.starmap(render_obj, zip(all_models, tmp_num_views, tmp_paths))
 
 
 def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):
@@ -225,7 +234,7 @@ def create_datasets(input_models_path: str, num_views_per_obj: int, output_path:
     :param split: list of ratios between train, val and test, e.g. [0.7, 0.1, 0.2]
     :param kwargs: additional parameters, passed to function render_obj
     """
-    #TODO: think about reasonable splitting criterion
+    # TODO: think about reasonable splitting criterion
     np.random.seed(23)
     split = np.array(split)
     all_models = glob.glob(input_models_path + '/*')
@@ -248,21 +257,21 @@ def create_datasets(input_models_path: str, num_views_per_obj: int, output_path:
     val_models = sum(val_models, [])
     test_models = [glob.glob(t + '/*/*/*.obj') for t in test_models]
     test_models = sum(test_models, [])
-
+    # TODO: implement multiprocessing
     for entry in [(train_models, 'train'), (val_models, 'val'), (test_models, 'test')]:
         objs, name = entry
         output_path_name = os.path.join(output_path, name)
         for obj in objs:
-            print(obj)
+            # print(obj)
             render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
 
 
 if __name__ == '__main__':
-    input_path = '../data/shape_net_3_classes/'
+    input_path = '/home/witold/Cargo/ShapeNetCore_0.1/'
     depth_scale = 0.3
     num_views = 30
     output_path = '../data/images/'
     name = 'shapenet'
     train_val_test_split = [0.7, 0.1, 0.2]
     create_dataset(input_path, num_views, output_path, name, depth_scale=depth_scale)
-    #create_datasets(input_path, num_views, output_path, train_val_test_split, depth_scale=depth_scale)
+    # create_datasets(input_path, num_views, output_path, train_val_test_split, depth_scale=depth_scale)
