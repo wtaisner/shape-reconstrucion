@@ -10,3 +10,7 @@ Activities performed:
 | RGB                            | DEPTH                              |
 |--------------------------------|------------------------------------|
 | ![rgb](static/example_rgb.png) | ![depth](static/example_depth.png) |
+
+## Literature / useful sources:
+- [POCO](https://github.com/valeoai/poco)
+- [3D Reconstruction of Novel Object Shapes from Single Images](https://github.com/rehg-lab/3dshapegen)
