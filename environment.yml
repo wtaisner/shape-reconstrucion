@@ -5,6 +5,8 @@ dependencies:
   - python=3.10 # open3d not supported for python 3.11
   - pip
   - numpy>=1.24
+  - torch>=2.0.0
+  - pandas
   - pip:
       - open3d
       - wandb

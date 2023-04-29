@@ -222,7 +222,7 @@ def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: 
 
     # ===== funny version ======
     with mp.Pool(processes=mp.cpu_count() // 2) as pool:
-        pool.starmap(render_obj, zip(all_models, tmp_num_views, tmp_paths))
+        pool.starmap(render_obj, zip(all_models, tmp_num_views, tmp_paths, **kwargs))
 
 
 def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):

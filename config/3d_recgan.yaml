@@ -1,0 +1,10 @@
+epochs: 100
+batch_size: 2
+lr: 0.0001
+no_workers: 8
+weight_decay: 0.0001
+step_size: 12
+gamma: 0.1
+vox_res: 64
+train: "/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/train.csv"
+test: "/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/test.csv"
