@@ -1,10 +1,12 @@
 import os.path
+import pathlib
 
 import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
 from matplotlib import pyplot as plt
+import multiprocessing as mp
 from torch.utils.data import Dataset
 
 
@@ -18,12 +20,14 @@ class ShapeNetDataset(Dataset):
             self,
             datafile: str,
             vox_res: int = 64,
-            data_path: str = "../data/images/shapenet",
+            data_path: str = "../data2/images/shapenet",
+            voxel_path: str = "../data2/voxels/shapenet",
 
     ):
         self.data = pd.read_csv(datafile, sep=';', index_col=0)
         self.data_path = data_path
         self.vox_res = vox_res
+        self.voxel_path = voxel_path
 
     def single_depth_2_pc(self, depth_path: str):
         depth = Image.open(os.path.join(self.data_path, depth_path)).convert("L")
@@ -148,14 +152,31 @@ class ShapeNetDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+    def save_voxels(self, tmp_data):
+        for idx, (rgb_path, depth_path) in tmp_data.iterrows():
+            voxel_path = rgb_path.replace("/rgb/", "/voxel/")
+            voxel_path = voxel_path.replace(".png", ".npz")
+            point_cloud = self.single_depth_2_pc(depth_path)
+            voxel_grid = self.voxelization(point_cloud)
+            padded = torch.tensor(self.voxel_grid_padding(voxel_grid)).permute(3, 0, 1, 2).numpy()
+            path = os.path.join(self.voxel_path, voxel_path)
+            if not os.path.isdir("/".join(path.split("/")[:-1])):
+                pathlib.Path("/".join(path.split("/")[:-1])).mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(path, padded)
+
     def __getitem__(self, idx):
         rgb_path, depth_path = self.data.iloc[idx, :]
-        point_cloud = self.single_depth_2_pc(depth_path)
-        voxel_grid = self.voxelization(point_cloud)
+        voxel_path = rgb_path.replace("/rgb/", "/voxel/")
+        voxel_path = voxel_path.replace(".png", ".npz")
+        voxel_grid = np.load(os.path.join(self.voxel_path, voxel_path))
         # self.plot_from_voxels(voxel_grid)
-        return torch.tensor(self.voxel_grid_padding(voxel_grid)).permute(3, 0, 1, 2)
+        return torch.tensor(voxel_grid)
 
 
 if __name__ == "__main__":
-    dataset = ShapeNetDataset("../train_test_splits/eval.csv")
-    print(dataset.__getitem__(2137).shape)
+    dataset = ShapeNetDataset("../train_test_splits/eval_001.csv")
+    n = 10  # chunk row size
+    list_df = [dataset.data[i:i + n] for i in range(0, dataset.data.shape[0], n)]
+    with mp.Pool(mp.cpu_count()) as pool:
+        pool.map(dataset.save_voxels, list_df)
+    # print(dataset.__getitem__(2137).shape)

@@ -3,10 +3,11 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
-from src.utils import read_config
-from src.shapenet_dataset import ShapeNetDataset
 from src.RecGAN import RecGAN
+from src.shapenet_dataset import ShapeNetDataset
+from src.utils import read_config, calculate_gradient_penalty
 
 
 def seed_worker(worker_id):
@@ -17,7 +18,6 @@ def seed_worker(worker_id):
 
 if __name__ == "__main__":
     torch.manual_seed(23)
-    torch.use_deterministic_algorithms(True)
     config = read_config("../config/3d_recgan.yaml")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cpu = torch.device("cpu")
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         shuffle=True
     )
 
-    model = RecGAN()  # TODO: add channels argument
+    model = RecGAN().to(device)  # TODO Future: add channels argument
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=float(config["lr"]),
@@ -56,16 +56,31 @@ if __name__ == "__main__":
         optimizer,
         step_size=config['step_size'],
         gamma=config['gamma'])
-    # model.to(device)
-    # criterion = # TODO: define loss function
-    for e in range(config["epochs"]):
+
+    for e in tqdm(range(config["epochs"]), total=config['epochs']):
         model.train()
         for idx, batch in enumerate(train_dataloader):
+            if idx % 10 == 0:
+                print(idx)
+            batch = batch.to(device)
+            # TODO: determine how to properly train both discriminator and generator
 
-            predictions = model(batch)
-            # loss = criterion(predictions, TODO)
-            loss.backward()
+            # train generator
+            generator_predictions = model(batch)
+            # loss_generator TODO: can be substituted by BCELoss with weights, if you know how to set them XD
+            generator_loss = torch.mean(
+                -torch.mean(config['ae_weight'] * batch * torch.log(generator_predictions[0] + 1e-8), dim=1) -
+                torch.mean((1 - config['ae_weight']) * (1 - batch) * torch.log(generator_predictions[0] + 1e-8), dim=1)
+            )
+            # train discriminator
+            discriminator_predictions = model(generator_predictions[0], batch, train_D=True)
+            gradient_penalty = calculate_gradient_penalty(model, batch, generator_predictions[0], device)
+            # TODO: define discriminator loss function
+            discriminator_loss = torch.mean(generator_predictions[0]) - torch.mean(batch) + gradient_penalty
+            (generator_loss + discriminator_loss).backward()  # TODO: optionally, backward each loss separately?
 
+            optimizer.step()
+            optimizer.zero_grad()
             if device == torch.device("cuda"):
                 torch.cuda.synchronize()
                 torch.cuda.empty_cache()
