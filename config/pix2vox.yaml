@@ -1,0 +1,53 @@
+#network
+network:
+  leaky_value: 0.2
+  tconv_use_bias: False
+  use_refiner: True
+  use_merger: True
+  n_vox: 128
+#dataset
+dataset:
+    train_data_file: '/home/annprzy/Desktop/shape-reconstrucion/train_test_splits/train_ania.csv'
+    eval_data_file: '/home/annprzy/Desktop/shape-reconstrucion/train_test_splits/eval_ania.csv'
+    test_datafile: '/home/annprzy/Desktop/shape-reconstrucion/train_test_splits/test_ania.csv'
+    img_path: '/home/annprzy/Desktop/shape-reconstrucion/data/images/shapenet'
+    models_path: '/home/annprzy/Desktop/shape-reconstrucion/data/shape_net_3_classes'
+    img_width: 224
+    img_height: 224
+    crop_width: 128
+    crop_height: 128
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5, 0.5, 0.5]
+#training
+train_params:
+  batch_size: 1
+  resume: False
+  weights: ''
+  num_workers: 4
+  num_epochs: 100
+  augment: True
+  transform:
+    brightness: 0.4
+    contrast: 0.4
+    saturation: 0.4
+    noise_std: 0.1
+    random_bg_color_range: [[225, 225], [225, 255], [225, 255]]
+  epoch_start_use_refiner: 0
+  epoch_start_use_merger: 0
+  encoder_lr: 0.001
+  decoder_lr: 0.001
+  refiner_lr: 0.001
+  merger_lr: 0.0001
+  encoder_lr_milestones: [150]
+  decoder_lr_milestones: [150]
+  refiner_lr_milestones: [150]
+  merger_lr_milestones: [150]
+  betas: [0.9, 0.999]
+  gamma: 0.5
+  save_every_n_epochs: 10
+  output_dir: '/home/annprzy/Desktop/shape-reconstrucion/outputs'
+#test params
+test_params:
+  'voxel_thr': [0.2, 0.3, 0.4, 0.5]
+  transform:
+    random_bg_color_range: [[240, 240], [240, 240], [240, 240]]
