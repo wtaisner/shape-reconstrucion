@@ -13,7 +13,7 @@ class ShapeNetDataset(Dataset):
         data = pd.read_csv(data_file, sep=';', index_col=0)
         # maybe it will be beneficial to change the way the split is defined - so that one sample of a given object
         # type will constitute an entry in the csv (then each time random image of this given sample would be chosen)
-        self.data = list(data['depth'])[:10]
+        self.data = list(data['depth'])
         self.img_path = img_path
         self.models_path = models_path
         self.transforms = transforms
