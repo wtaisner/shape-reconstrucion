@@ -174,7 +174,7 @@ class ShapeNetDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = ShapeNetDataset("../train_test_splits/eval_001.csv")
+    dataset = ShapeNetDataset("../train_test_splits/eval_0.001.csv")
     # n = 10  # chunk row size
     # list_df = [dataset.data[i:i + n] for i in range(0, dataset.data.shape[0], n)]
     # with mp.Pool(mp.cpu_count()) as pool:
