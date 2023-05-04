@@ -17,22 +17,22 @@ class Decoder(torch.nn.Module):
             torch.nn.ReLU()
         )
 
-        self.layer15 = torch.nn.Sequential(
-            torch.nn.ConvTranspose3d(512, 512, kernel_size=4, stride=2, bias=cfg['tconv_use_bias'], padding=1),
-            torch.nn.BatchNorm3d(512),
-            torch.nn.ReLU()
-        )
+        # self.layer15 = torch.nn.Sequential(
+        #     torch.nn.ConvTranspose3d(512, 512, kernel_size=4, stride=2, bias=cfg['tconv_use_bias'], padding=1),
+        #     torch.nn.BatchNorm3d(512),
+        #     torch.nn.ReLU()
+        # )
 
         self.layer2 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(512, 128, kernel_size=4, stride=2, bias=cfg['tconv_use_bias'], padding=1),
             torch.nn.BatchNorm3d(128),
             torch.nn.ReLU()
         )
-        self.layer25 = torch.nn.Sequential(
-            torch.nn.ConvTranspose3d(128, 128, kernel_size=4, stride=2, bias=cfg['tconv_use_bias'], padding=1),
-            torch.nn.BatchNorm3d(128),
-            torch.nn.ReLU()
-        )
+        # self.layer25 = torch.nn.Sequential(
+        #     torch.nn.ConvTranspose3d(128, 128, kernel_size=4, stride=2, bias=cfg['tconv_use_bias'], padding=1),
+        #     torch.nn.BatchNorm3d(128),
+        #     torch.nn.ReLU()
+        # )
 
         self.layer3 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(128, 32, kernel_size=4, stride=2, bias=cfg['tconv_use_bias'], padding=1),
@@ -59,10 +59,10 @@ class Decoder(torch.nn.Module):
             gen_volume = features.view(-1, 2048, 2, 2, 2)
             # print('1',gen_volume.size())   # torch.Size([batch_size, 2048, 2, 2, 2])
             gen_volume = self.layer1(gen_volume)
-            gen_volume = self.layer15(gen_volume)
+            # gen_volume = self.layer15(gen_volume)
             # print('2',gen_volume.size())   # torch.Size([batch_size, 512, 4, 4, 4])
             gen_volume = self.layer2(gen_volume)
-            gen_volume = self.layer25(gen_volume)
+            # gen_volume = self.layer25(gen_volume)
             # print('3',gen_volume.size())   # torch.Size([batch_size, 128, 8, 8, 8])
             gen_volume = self.layer3(gen_volume)
             # print('4',gen_volume.size())   # torch.Size([batch_size, 32, 16, 16, 16])

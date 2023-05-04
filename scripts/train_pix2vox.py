@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 import torch
+import wandb
 from torch.utils.data import DataLoader
 from datetime import datetime as dt
 
@@ -30,6 +31,12 @@ if __name__ == '__main__':
     torch.manual_seed(42)
     cfg = read_config("../config/pix2vox.yaml")
     print(cfg)
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="shape-reconstruction",
+        # track hyperparameters and run metadata
+        config=cfg
+    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     cpu = torch.device("cpu")
@@ -66,8 +73,10 @@ if __name__ == '__main__':
             data_transforms.ToTensor(),
         ])
 
-    train_dataset = ShapeNetDataset(cfg['dataset']['train_data_file'], cfg['dataset']['img_path'], cfg['dataset']['models_path'], train_transforms)
-    test_dataset = ShapeNetDataset(cfg['dataset']['eval_data_file'], cfg['dataset']['img_path'], cfg['dataset']['models_path'], train_transforms)
+    train_dataset = ShapeNetDataset(cfg['dataset']['train_data_file'], cfg['dataset']['img_path'],
+                                    cfg['dataset']['models_path'], train_transforms)
+    test_dataset = ShapeNetDataset(cfg['dataset']['eval_data_file'], cfg['dataset']['img_path'],
+                                   cfg['dataset']['models_path'], train_transforms)
 
     g_train, g_test = torch.Generator(), torch.Generator()
     g_train.manual_seed(42)
@@ -246,7 +255,7 @@ if __name__ == '__main__':
                   dt.now(), epoch, cfg['train_params']['num_epochs'], epoch_end_time - epoch_start_time,
                   encoder_losses.avg,
                   refiner_losses.avg))
-
+        wandb.log({'train/EncoderDecoderLoss': encoder_losses.avg, 'train/RefinerLoss': refiner_losses.avg})
         # test
         # iou = test_net(cfg, epoch_idx + 1, output_dir, val_data_loader, val_writer, encoder, decoder, refiner,
         #                merger)
@@ -290,14 +299,18 @@ if __name__ == '__main__':
                     union = torch.sum(torch.ge(_volume.add(gt_volumes), 1)).float()
                     test_ious.append((intersection / union).tolist())
         iou = np.mean(np.array(test_ious).flatten())
-        print(iou)
         print('[INFO] %s Test [%d/%d] IOU = %.3f (s) EDLoss = %.4f RLoss = %.4f' %
               (
                   dt.now(), epoch, cfg['train_params']['num_epochs'], iou,
                   test_encoder_losses.avg,
                   test_refiner_losses.avg))
-
-
+        wandb.log(
+            {
+                'test/EncoderDecoderLoss': test_encoder_losses.avg,
+                'test/RefinerLoss': test_refiner_losses.avg,
+                'test/IOU': iou,
+            }
+        )
 
         if epoch % cfg['train_params']['save_every_n_epochs'] == 0:
             if not os.path.exists(ckpt_dir):
@@ -316,5 +329,6 @@ if __name__ == '__main__':
                                            encoder, encoder_solver, decoder, decoder_solver, refiner,
                                            refiner_solver, merger, merger_solver, best_iou, best_epoch)
 
+    wandb.finish()
     # train_writer.close()
     # test_writer.close()
