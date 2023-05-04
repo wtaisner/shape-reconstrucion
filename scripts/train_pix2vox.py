@@ -76,7 +76,7 @@ if __name__ == '__main__':
     train_dataset = ShapeNetDataset(cfg['dataset']['train_data_file'], cfg['dataset']['img_path'],
                                     cfg['dataset']['models_path'], train_transforms)
     test_dataset = ShapeNetDataset(cfg['dataset']['eval_data_file'], cfg['dataset']['img_path'],
-                                   cfg['dataset']['models_path'], train_transforms)
+                                   cfg['dataset']['models_path'], test_transforms)
 
     g_train, g_test = torch.Generator(), torch.Generator()
     g_train.manual_seed(42)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         num_workers=cfg["train_params"]["num_workers"],
         worker_init_fn=seed_worker,
         generator=g_test,
-        shuffle=True
+        shuffle=False
     )
 
     encoder = Encoder(cfg['network'])

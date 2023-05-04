@@ -10,10 +10,13 @@ from src.Pix2Vox.utils import binvox_rw
 
 class ShapeNetDataset(Dataset):
     def __init__(self, data_file, img_path, models_path, transforms=None):
-        data = pd.read_csv(data_file, sep=';', index_col=0)
-        # maybe it will be beneficial to change the way the split is defined - so that one sample of a given object
-        # type will constitute an entry in the csv (then each time random image of this given sample would be chosen)
-        self.data = list(data['depth_path'])
+        if type(data_file) is str:
+            data = pd.read_csv(data_file, sep=';', index_col=0)
+            # maybe it will be beneficial to change the way the split is defined - so that one sample of a given object
+            # type will constitute an entry in the csv (then each time random image of this given sample would be chosen)
+            self.data = list(data['depth_path'])
+        else:
+            self.data = data_file
         self.img_path = img_path
         self.models_path = models_path
         self.transforms = transforms
@@ -23,6 +26,7 @@ class ShapeNetDataset(Dataset):
 
     def __getitem__(self, idx):
         depth_path = os.path.join(self.img_path, self.data[idx])
+        print(depth_path)
         taxonomy_name, taxonomy_sample = self.data[idx].split('/')[0], self.data[idx].split('/')[-1]
         sample_name = taxonomy_sample.split('_')[0]
         # volume_path = os.path.join(self.models_path, taxonomy_name, sample_name, 'models', 'model_normalized.surface.binvox')
