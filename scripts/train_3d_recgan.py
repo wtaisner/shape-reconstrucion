@@ -57,11 +57,9 @@ if __name__ == "__main__":
         step_size=config['step_size'],
         gamma=config['gamma'])
 
-    for e in tqdm(range(config["epochs"]), total=config['epochs']):
+    for e in tqdm(range(config["epochs"]), total=config['epochs'], desc="Epochs ",position=0, leave=False):
         model.train()
-        for idx, batch in enumerate(train_dataloader):
-            if idx % 10 == 0:
-                print(idx)
+        for idx, batch in tqdm(enumerate(train_dataloader), total=len(train_dataloader), desc="Training ", leave=False, position=1):
             batch = batch.to(device)
             # TODO: determine how to properly train both discriminator and generator
 
@@ -85,22 +83,23 @@ if __name__ == "__main__":
                 torch.cuda.synchronize()
                 torch.cuda.empty_cache()
 
-        model.eval()
-        with torch.inference_mode():
-            ground_truth, predictions = None, None
-            for idx, batch in enumerate(test_dataloader):
-                torch.cuda.empty_cache()
-
-                tmp_predictions = model(batch)
-
-                if ground_truth is None:
-                    ground_truth = TODO
-                    predictions = tmp_predictions
-                else:
-                    try:
-                        ground_truth = torch.cat([ground_truth, TODO], 0)
-                        predictions = torch.cat([predictions, tmp_predictions], 0)
-                    except:
-                        pass
+        train_dataset.plot_from_voxels(generator_predictions[0].squeeze(0).squeeze(0).detach().cpu().numpy())
+        # model.eval()
+        # with torch.inference_mode():
+        #     ground_truth, predictions = None, None
+        #     for idx, batch in enumerate(test_dataloader):
+        #         torch.cuda.empty_cache()
+        #
+        #         tmp_predictions = model(batch)
+        #
+        #         if ground_truth is None:
+        #             ground_truth = TODO
+        #             predictions = tmp_predictions
+        #         else:
+        #             try:
+        #                 ground_truth = torch.cat([ground_truth, TODO], 0)
+        #                 predictions = torch.cat([predictions, tmp_predictions], 0)
+        #             except:
+        #                 pass
 
         scheduler.step()

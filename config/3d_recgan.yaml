@@ -1,5 +1,5 @@
-epochs: 2
-batch_size: 2
+epochs: 1
+batch_size: 1
 lr: 0.0001
 no_workers: 8
 weight_decay: 0.0001
@@ -7,5 +7,5 @@ step_size: 12
 gamma: 0.1
 ae_weight: 0.85
 vox_res: 64
-train: "/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/eval.csv" # TODO <- podmienić na train, eval do testów
+train: "/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/eval_001.csv" # TODO <- podmienić na train, eval do testów
 test: "/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/test.csv"

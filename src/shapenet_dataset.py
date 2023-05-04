@@ -102,7 +102,7 @@ class ShapeNetDataset(Dataset):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(x, y, z, zdir='z', c='red')
-        plt.show()
+        plt.savefig("test.png")
 
     def voxel_grid_padding(self, a):
         x_d = a.shape[0]
@@ -168,15 +168,15 @@ class ShapeNetDataset(Dataset):
         rgb_path, depth_path = self.data.iloc[idx, :]
         voxel_path = rgb_path.replace("/rgb/", "/voxel/")
         voxel_path = voxel_path.replace(".png", ".npz")
-        voxel_grid = np.load(os.path.join(self.voxel_path, voxel_path))
+        voxel_grid = np.load(os.path.join(self.voxel_path, voxel_path))['arr_0']
         # self.plot_from_voxels(voxel_grid)
         return torch.tensor(voxel_grid)
 
 
 if __name__ == "__main__":
     dataset = ShapeNetDataset("../train_test_splits/eval_001.csv")
-    n = 10  # chunk row size
-    list_df = [dataset.data[i:i + n] for i in range(0, dataset.data.shape[0], n)]
-    with mp.Pool(mp.cpu_count()) as pool:
-        pool.map(dataset.save_voxels, list_df)
-    # print(dataset.__getitem__(2137).shape)
+    # n = 10  # chunk row size
+    # list_df = [dataset.data[i:i + n] for i in range(0, dataset.data.shape[0], n)]
+    # with mp.Pool(mp.cpu_count()) as pool:
+    #     pool.map(dataset.save_voxels, list_df)
+    print(dataset.__getitem__(5).shape)
