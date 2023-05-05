@@ -33,11 +33,13 @@ if __name__ == '__main__':
     print(cfg)
     wandb.init(
         # set the wandb project where this run will be logged
+        entity='ap-wt',
         project="shape-reconstruction",
         # track hyperparameters and run metadata
         config=cfg
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cpu')
     print(device)
     cpu = torch.device("cpu")
     img_size = cfg['dataset']['img_height'], cfg['dataset']['img_width']
@@ -169,9 +171,6 @@ if __name__ == '__main__':
     log_dir = output_dir % 'logs'
     ckpt_dir = output_dir % 'checkpoints'
 
-    # train_writer = SummaryWriter(os.path.join(log_dir, 'train'))
-    # test_writer = SummaryWriter(os.path.join(log_dir, 'test'))
-
     print('training started')
     for epoch in range(init_epoch, cfg['train_params']['num_epochs']):
         epoch_start_time = time.time()
@@ -230,19 +229,8 @@ if __name__ == '__main__':
             encoder_losses.update(encoder_loss.item())
             refiner_losses.update(refiner_loss.item())
 
-            # n_itr = epoch * n_batches + batch_idx
-            # train_writer.add_scalar('EncoderDecoder/BatchLoss', encoder_loss.item(), n_itr)
-            # train_writer.add_scalar('Refiner/BatchLoss', refiner_loss.item(), n_itr)
-
             batch_time.update(time.time() - batch_end_time)
             batch_end_time = time.time()
-            # print(
-            #     '[INFO] %s [Epoch %d/%d][Batch %d/%d] BatchTime = %.3f (s) DataTime = %.3f (s) EDLoss = %.4f RLoss = %.4f'
-            #     % (dt.now(), epoch, cfg['train_params']['num_epochs'], batch_idx, n_batches, batch_time.val,
-            #        data_time.val, encoder_loss.item(), refiner_loss.item()))
-
-        # train_writer.add_scalar('EncoderDecoder/EpochLoss', encoder_losses.avg, epoch)
-        # train_writer.add_scalar('Refiner/EpochLoss', refiner_losses.avg, epoch)
 
         encoder_lr_scheduler.step()
         decoder_lr_scheduler.step()
@@ -255,16 +243,15 @@ if __name__ == '__main__':
                   dt.now(), epoch, cfg['train_params']['num_epochs'], epoch_end_time - epoch_start_time,
                   encoder_losses.avg,
                   refiner_losses.avg))
-        wandb.log({'train/EncoderDecoderLoss': encoder_losses.avg, 'train/RefinerLoss': refiner_losses.avg})
-        # test
-        # iou = test_net(cfg, epoch_idx + 1, output_dir, val_data_loader, val_writer, encoder, decoder, refiner,
-        #                merger)
+
+        wandb.log({'train/EncoderDecoderLoss': encoder_losses.avg, 'train/RefinerLoss': refiner_losses.avg}, step=epoch)
+
         encoder.eval()
         decoder.eval()
         refiner.eval()
         merger.eval()
 
-        test_ious = []
+        test_ious = {}
         test_encoder_losses = network_utils.AverageMeter()
         test_refiner_losses = network_utils.AverageMeter()
         for batch_idx, (taxonomy_names, sample_names, imgs, gt_volumes) in enumerate(
@@ -293,24 +280,33 @@ if __name__ == '__main__':
                 test_encoder_losses.update(encoder_loss.item())
                 test_refiner_losses.update(refiner_loss.item())
 
-                for th in cfg['test_params']['voxel_thr']:
-                    _volume = torch.ge(generated_volume, th).float()
-                    intersection = torch.sum(_volume.mul(gt_volumes)).float()
-                    union = torch.sum(torch.ge(_volume.add(gt_volumes), 1)).float()
-                    test_ious.append((intersection / union).tolist())
-        iou = np.mean(np.array(test_ious).flatten())
-        print('[INFO] %s Test [%d/%d] IOU = %.3f (s) EDLoss = %.4f RLoss = %.4f' %
-              (
-                  dt.now(), epoch, cfg['train_params']['num_epochs'], iou,
-                  test_encoder_losses.avg,
-                  test_refiner_losses.avg))
-        wandb.log(
-            {
-                'test/EncoderDecoderLoss': test_encoder_losses.avg,
-                'test/RefinerLoss': test_refiner_losses.avg,
-                'test/IOU': iou,
-            }
-        )
+                for taxonomy, sample, generated, gt in zip(taxonomy_names, sample_names, generated_volume, gt_volumes):
+                    test_iou = []
+                    for th in cfg['test_params']['voxel_thr']:
+                        _volume = torch.ge(generated_volume, th).float()
+                        intersection = torch.sum(_volume.mul(gt_volumes)).float()
+                        union = torch.sum(torch.ge(_volume.add(gt_volumes), 1)).float()
+                        test_iou.append((intersection / union).tolist())
+                    if taxonomy not in test_ious:
+                        test_ious[taxonomy] = [test_iou]
+                    else:
+                        test_ious[taxonomy].append(test_iou)
+        mean_ious_taxonomy = {tax: np.mean(np.array(test_ious[tax]), axis=0) for tax in test_ious}
+        mean_ious_all = np.mean(np.array(*list(test_ious.values())), axis=0)
+        max_iou = np.max(mean_ious_all)
+        print('=========================')
+        print(f'[INFO] {dt.now()} Test [{epoch}/{cfg["train_params"]["num_epochs"]}] Partial results')
+        for key, value in mean_ious_taxonomy.items():
+            print(f'Taxonomy {key}, mean IOU {value}')
+        print(f"Thesholds:{cfg['test_params']['voxel_thr']} Mean IOU: {mean_ious_all}")
+        print('IOU = %.3f (s) EDLoss = %.4f RLoss = %.4f' %
+              (max_iou, test_encoder_losses.avg, test_refiner_losses.avg))
+        print('=========================')
+        metrics = dict((f'test/IOU_thr_{th}', v) for th, v in zip(cfg["test_params"]["voxel_thr"], mean_ious_all))
+        metrics['test/EncoderDecoderLoss'] = test_encoder_losses.avg
+        metrics['test/RefinerLoss'] = test_refiner_losses.avg
+        metrics['test/IOU'] = max_iou
+        wandb.log(metrics, step=epoch)
 
         if epoch % cfg['train_params']['save_every_n_epochs'] == 0:
             if not os.path.exists(ckpt_dir):
@@ -320,15 +316,13 @@ if __name__ == '__main__':
                                            epoch, encoder, encoder_solver, decoder, decoder_solver,
                                            refiner, refiner_solver, merger, merger_solver, best_iou,
                                            best_epoch)
-        if iou > best_iou:
+        if max_iou > best_iou:
             if not os.path.exists(ckpt_dir):
                 os.makedirs(ckpt_dir)
-            best_iou = iou
+            best_iou = max_iou
             best_epoch = epoch
             network_utils.save_checkpoints(cfg, os.path.join(ckpt_dir, 'best-ckpt.pth'), epoch,
                                            encoder, encoder_solver, decoder, decoder_solver, refiner,
                                            refiner_solver, merger, merger_solver, best_iou, best_epoch)
 
     wandb.finish()
-    # train_writer.close()
-    # test_writer.close()
