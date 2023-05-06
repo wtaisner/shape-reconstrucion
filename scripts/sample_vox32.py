@@ -2,6 +2,7 @@
 Get an intersection of instances present in ShapeNet and downloaded part of shapenet containing binvox files.
 """
 import glob
+import os
 from distutils.dir_util import copy_tree
 
 _dataset_path = "/home/witold/Cargo/ShapeNetCore_0.1"
@@ -15,6 +16,6 @@ if __name__ == "__main__":
     for file in common:
         cat, instance = file.split("/")
         copy_tree(
-            src=f"/home/witold/Cargo/ShapeNetCore_0.1/{cat}/{instance}",
-            dst=f"/home/witold/Cargo/ShapeNetVox32_sample_0.1/{cat}/{instance}",
+            src=os.path.join(_dataset_path, cat, instance),
+            dst=os.path.join(_binvox_path, cat, instance),
         )

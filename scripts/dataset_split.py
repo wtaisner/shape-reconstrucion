@@ -6,13 +6,8 @@ from typing import Iterable, Tuple
 import numpy as np
 import pandas as pd
 
-"""
-Tzn ja bym zrobiła % kategorii do traina, % kategorii do test, % do walidacji,
-i potem z pozostałych % dzielony między train i test, % dzielony między train i walidacja 
-i może jeszcze % dzielony między walidacja i test
-"""
-
-dataset_path = "../data/images/shapenet"
+dataset_path = "../data/images_vox32_10_views/shapenet"
+num_views = 10
 
 
 def get_partial_path_by_category(cat: str):
@@ -34,15 +29,15 @@ def get_set(list_categories: Iterable) -> pd.DataFrame:
     )
 
 
-def split_categories(list_categories: Iterable, set_1: pd.DataFrame, set_2: pd.DataFrame) -> Tuple:
+def split_categories(list_categories: Iterable, set_1: pd.DataFrame, set_2: pd.DataFrame, num_views: int = 30) -> Tuple:
     for cat in list_categories:
         tmp_set = get_set([cat])
-        assert tmp_set.shape[0] % 30 == 0
-        half = int(np.ceil((tmp_set.shape[0] / 30) / 2)) * 30
+        assert tmp_set.shape[0] % num_views == 0
+        half = int(np.ceil((tmp_set.shape[0] / num_views) / 2)) * num_views
         return pd.concat([set_1, tmp_set.iloc[:half, :]]), pd.concat([set_2, tmp_set.iloc[half:, :]])
 
 
-all_categories = set(os.listdir("../data/images/shapenet"))
+all_categories = set(os.listdir(dataset_path))
 all_categories.remove("camera.npy")
 num_categories = len(all_categories)
 random.seed(23)
@@ -93,10 +88,10 @@ train_set = get_set(train_categories)
 test_set = get_set(test_categories)
 eval_set = get_set(validation_categories)
 
-train_set, test_set = split_categories(train_test_categories, train_set, test_set)
-train_set, eval_set = split_categories(train_eval_categories, train_set, eval_set)
-test_set, eval_set = split_categories(test_eval_categories, test_set, eval_set)
+train_set, test_set = split_categories(train_test_categories, train_set, test_set, num_views)
+train_set, eval_set = split_categories(train_eval_categories, train_set, eval_set, num_views)
+test_set, eval_set = split_categories(test_eval_categories, test_set, eval_set, num_views)
 
-train_set.to_csv("../train_test_splits/train.csv", sep=';')
-test_set.to_csv("../train_test_splits/test.csv", sep=';')
-eval_set.to_csv("../train_test_splits/eval.csv", sep=';')
+train_set.to_csv("../train_test_splits/train_vox32_10_views.csv", sep=';')
+test_set.to_csv("../train_test_splits/test_vox32_10_views.csv", sep=';')
+eval_set.to_csv("../train_test_splits/eval_vox32_10_views.csv", sep=';')

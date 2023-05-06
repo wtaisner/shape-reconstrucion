@@ -1,3 +1,4 @@
+import gc
 import os
 import random
 import time
@@ -7,8 +8,6 @@ import torch
 import wandb
 from torch.utils.data import DataLoader
 from datetime import datetime as dt
-
-# from torch.utils.tensorboard import SummaryWriter
 
 from src.Pix2Vox.models.decoder import Decoder
 from src.Pix2Vox.models.encoder import Encoder
@@ -39,7 +38,6 @@ if __name__ == '__main__':
         config=cfg
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device('cpu')
     print(device)
     cpu = torch.device("cpu")
     img_size = cfg['dataset']['img_height'], cfg['dataset']['img_width']
@@ -292,13 +290,14 @@ if __name__ == '__main__':
                     else:
                         test_ious[taxonomy].append(test_iou)
         mean_ious_taxonomy = {tax: np.mean(np.array(test_ious[tax]), axis=0) for tax in test_ious}
-        mean_ious_all = np.mean(np.array(*list(test_ious.values())), axis=0)
+        test_iou_values = np.array([a for b in list(test_ious.values()) for a in b])
+        mean_ious_all = np.mean(test_iou_values, axis=0)
         max_iou = np.max(mean_ious_all)
         print('=========================')
         print(f'[INFO] {dt.now()} Test [{epoch}/{cfg["train_params"]["num_epochs"]}] Partial results')
         for key, value in mean_ious_taxonomy.items():
             print(f'Taxonomy {key}, mean IOU {value}')
-        print(f"Thesholds:{cfg['test_params']['voxel_thr']} Mean IOU: {mean_ious_all}")
+        print(f"Thresholds:{cfg['test_params']['voxel_thr']} Mean IOU: {mean_ious_all}")
         print('IOU = %.3f (s) EDLoss = %.4f RLoss = %.4f' %
               (max_iou, test_encoder_losses.avg, test_refiner_losses.avg))
         print('=========================')
@@ -325,4 +324,8 @@ if __name__ == '__main__':
                                            encoder, encoder_solver, decoder, decoder_solver, refiner,
                                            refiner_solver, merger, merger_solver, best_iou, best_epoch)
 
+        if device == torch.device("cuda"):
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+        gc.collect()
     wandb.finish()

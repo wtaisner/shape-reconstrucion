@@ -1,14 +1,9 @@
-import os
 import random
-import time
+from datetime import datetime as dt
 
 import numpy as np
 import torch
-import wandb
 from torch.utils.data import DataLoader
-from datetime import datetime as dt
-
-# from torch.utils.tensorboard import SummaryWriter
 
 from src.Pix2Vox.models.decoder import Decoder
 from src.Pix2Vox.models.encoder import Encoder
@@ -28,7 +23,7 @@ def seed_worker(worker_id):
 
 if __name__ == '__main__':
     depth_path = '03636649/depth/927e0654427c4d0b82241d99b4e87f38_1680001.png'
-    weights_path = '/home/annprzy/Desktop/shape-reconstrucion/outputs/checkpoints/2023-05-04T17:49:43.510715/best-ckpt.pth'
+    weights_path = '../outputs/checkpoints/2023-05-06T13:54:20.547642/best-ckpt.pth'
 
     cfg = read_config("../config/pix2vox.yaml")
 
@@ -135,6 +130,3 @@ if __name__ == '__main__':
                 test_ious.append((intersection / union).tolist())
     iou = np.mean(np.array(test_ious).flatten())
     print(iou)
-
-
-

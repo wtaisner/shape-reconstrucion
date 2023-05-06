@@ -30,8 +30,10 @@ def compare_generated_gt(generated_volume, gt_volume, save_path=None):
     gs = fig.add_gridspec(1, 2)
     ax1, ax2 = fig.add_subplot(gs[0, 0], projection='3d'), fig.add_subplot(gs[0, 1], projection='3d')
     ax1.set_aspect('equal')
+    ax1.set_title("Generated")
     ax1.voxels(generated_volume, edgecolor="k")
     ax2.set_aspect('equal')
+    ax2.set_title("Ground truth")
     ax2.voxels(gt_volume, edgecolor="k")
 
     if save_path is not None:
