@@ -3,14 +3,23 @@ import math
 import os
 import multiprocessing as mp
 from typing import List
-
+import gc
 import bpy
 import numpy as np
 
 
-def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: float = 0.1, scale: int = 1,
-               remove_doubles: bool = True,
-               edge_split: bool = False, color_depth: int = 8, resolution: int = 600, engine: str = 'BLENDER_EEVEE'):
+def render_obj(
+        obj_path: str,
+        num_views: int,
+        output_folder: str,
+        depth_scale: float = 0.3,
+        scale: int = 1,
+        remove_doubles: bool = True,
+        edge_split: bool = False,
+        color_depth: int = 8,
+        resolution: int = 600,
+        engine: str = 'BLENDER_EEVEE'
+):
     """
     Generates rgbd images (rgb + depth) for a given mesh (.obj file path)
     source: https://github.com/panmari/stanford-shapenet-renderer/blob/master/render_blender.py
@@ -161,7 +170,7 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
     sensor_height = camdata.sensor_height  # mm
     pixel_aspect_ratio = scene.render.pixel_aspect_x / scene.render.pixel_aspect_y
 
-    if (camdata.sensor_fit == 'VERTICAL'):
+    if camdata.sensor_fit == 'VERTICAL':
         # the sensor height is fixed (sensor fit is horizontal),
         # the sensor width is effectively changed with the pixel aspect ratio
         s_u = width / sensor_width / pixel_aspect_ratio
@@ -190,14 +199,17 @@ def render_obj(obj_path: str, num_views: int, output_folder: str, depth_scale: f
         # print("Rotation {}, {}".format((stepsize * i), math.radians(stepsize * i)))
 
         file_name = f'{model_id_1}_{int(i * stepsize):03d}'
-        scene.render.filepath = os.path.join(fp, model_id_0, 'rgb', f'{file_name}0001')
-        depth_file_output.file_slots[0].path = os.path.join(fp, model_id_0, 'depth', file_name)
+        if not os.path.isfile(os.path.join(fp, model_id_0, 'rgb', f'{file_name}0001')):
+            scene.render.filepath = os.path.join(fp, model_id_0, 'rgb', f'{file_name}0001')
+        if not os.path.isfile(os.path.join(fp, model_id_0, 'depth', file_name)):
+            depth_file_output.file_slots[0].path = os.path.join(fp, model_id_0, 'depth', file_name)
 
         bpy.ops.render.render(write_still=True)  # render still
 
         cam_empty.rotation_euler[2] += math.radians(stepsize)
 
     np.save(os.path.join(fp, 'camera.npy'), K)
+    # gc.collect()
 
 
 def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: str, name: str, **kwargs):
@@ -211,18 +223,25 @@ def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: 
     """
     np.random.seed(23)
     all_models = glob.glob(input_models_path + '/*/*/*/*.obj')
-    output_path_name = os.path.join(output_path, name)
-    tmp_paths = [output_path_name for _ in range(len(all_models))]
-    tmp_num_views = [num_views_per_obj for _ in range(len(all_models))]
+    # bpy.ops.wm.read_factory_settings(use_empty=True)
 
-    # ===== slow version =====
-    # for obj in all_models:
-    #     print(obj)
-    #     render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
+    chunks = (len(all_models) - 1) // 1000 + 1
+    for i in range(chunks):
+        batch = all_models[i * 1000:(i + 1) * 1000]
 
-    # ===== funny version ======
-    with mp.Pool(processes=mp.cpu_count() // 2) as pool:
-        pool.starmap(render_obj, zip(all_models, tmp_num_views, tmp_paths, **kwargs))
+        output_path_name = os.path.join(output_path, name)
+        tmp_paths = [output_path_name for _ in range(len(batch))]
+        tmp_num_views = [num_views_per_obj for _ in range(len(batch))]
+
+        # ===== slow version =====
+        # for obj in all_models:
+        #     print(obj)
+        #     render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
+
+        # ===== funny version ======
+        with mp.Pool(processes=mp.cpu_count() // 2) as pool:
+            pool.starmap(render_obj, zip(batch, tmp_num_views, tmp_paths, **kwargs))
+        gc.collect()
 
 
 def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):
@@ -267,11 +286,11 @@ def create_datasets(input_models_path: str, num_views_per_obj: int, output_path:
 
 
 if __name__ == '__main__':
-    input_path = '/home/witold/Cargo/ShapeNetCore_0.1/'
+    input_path = '/home/witold/Cargo/ShapeNetVox32_intersection_shapenet_full_sample_0.2/'
     depth_scale = 0.3
-    num_views = 30
-    output_path = '../data/images/'
+    num_views = 10
+    output_path = '../data/images_vox32_10_views_2/'
     name = 'shapenet'
     train_val_test_split = [0.7, 0.1, 0.2]
-    create_dataset(input_path, num_views, output_path, name, depth_scale=depth_scale)
+    create_dataset(input_path, num_views, output_path, name)
     # create_datasets(input_path, num_views, output_path, train_val_test_split, depth_scale=depth_scale)
