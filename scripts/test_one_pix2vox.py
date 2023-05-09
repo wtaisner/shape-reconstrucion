@@ -24,6 +24,7 @@ def seed_worker(worker_id):
 if __name__ == '__main__':
     depth_path = '03636649/depth/927e0654427c4d0b82241d99b4e87f38_1680001.png'
     weights_path = '../outputs/checkpoints/2023-05-06T13:54:20.547642/best-ckpt.pth'
+    visualize = False
 
     cfg = read_config("../config/pix2vox.yaml")
 
@@ -74,10 +75,6 @@ if __name__ == '__main__':
 
     bce_loss = torch.nn.BCELoss()
 
-    init_epoch = 0
-    best_iou = -1
-    best_epoch = -1
-
     print('[INFO] %s Recovering from %s ...' % (dt.now(), cfg['train_params']['weights']))
     checkpoint = torch.load(weights_path)
     encoder.load_state_dict(checkpoint['encoder_state_dict'])
@@ -118,7 +115,9 @@ if __name__ == '__main__':
                 refiner_loss = bce_loss(generated_volume, gt_volumes) * 10
             else:
                 refiner_loss = encoder_loss
-            compare_generated_gt(generated_volume, gt_volumes)
+
+            if visualize:
+                compare_generated_gt(generated_volume, gt_volumes)
 
             test_encoder_losses.update(encoder_loss.item())
             test_refiner_losses.update(refiner_loss.item())
@@ -128,5 +127,4 @@ if __name__ == '__main__':
                 intersection = torch.sum(_volume.mul(gt_volumes)).float()
                 union = torch.sum(torch.ge(_volume.add(gt_volumes), 1)).float()
                 test_ious.append((intersection / union).tolist())
-    iou = np.mean(np.array(test_ious).flatten())
-    print(iou)
+        print(test_ious)
