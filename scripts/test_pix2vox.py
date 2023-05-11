@@ -3,6 +3,7 @@ from datetime import datetime as dt
 
 import numpy as np
 import torch
+import wandb
 from torch.utils.data import DataLoader
 
 from src.Pix2Vox.models.decoder import Decoder
@@ -25,7 +26,14 @@ if __name__ == '__main__':
     weights_path = '../outputs/checkpoints/2023-05-06T13:54:20.547642/best-ckpt.pth'
 
     cfg = read_config("../config/pix2vox.yaml")
-
+    wandb.init(
+        # set the wandb project where this run will be logged
+        entity='ap-wt',
+        project="shape-reconstruction",
+        # track hyperparameters and run metadata
+        config=cfg,
+        name="test-run-18"
+    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cpu = torch.device("cpu")
     img_size = cfg['dataset']['img_height'], cfg['dataset']['img_width']
@@ -137,8 +145,11 @@ if __name__ == '__main__':
     print(f'[INFO] {dt.now()} Test')
     for key, value in mean_ious_taxonomy.items():
         print(f'Taxonomy {key}, mean IOU {value}')
+        wandb.log({f"Taxonomy {key} mean IOU": str(value)})
     print(f"Thresholds:{cfg['test_params']['voxel_thr']} Mean IOU: {mean_ious_all}")
     print(f'Max IOU for: {cfg["test_params"]["voxel_thr"][np.argmax(mean_ious_all)]}, Max IOU: {np.max(mean_ious_all)}')
     print(f'Encoder loss: {test_encoder_losses.avg}')
     print(f'Refiner loss: {test_refiner_losses.avg}')
 
+    wandb.log({"EncoderDecoderLoss": test_encoder_losses.avg})
+    wandb.log({"RefinerLoss": test_refiner_losses.avg})
