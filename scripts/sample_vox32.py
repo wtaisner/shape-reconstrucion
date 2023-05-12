@@ -5,8 +5,9 @@ import glob
 import os
 from distutils.dir_util import copy_tree
 
-_dataset_path = "/home/witold/Cargo/ShapeNetCore_0.1"
-_binvox_path = "/home/witold/Cargo/ShapeNetVox32"
+_dataset_path = "/home/witold/Cargo/ShapeNetCore.v2"
+_binvox_path = "/home/witold/Cargo/ShapeNetVox32_sample_0.5_enhanced"
+_target_path = "/home/witold/Cargo/ShapeNetVox32_sample_0.5_added_categories"
 
 if __name__ == "__main__":
     imgs = ["/".join(x.split("/")[-2:]) for x in glob.glob(f"{_dataset_path}/*/*", recursive=True)]
@@ -17,5 +18,5 @@ if __name__ == "__main__":
         cat, instance = file.split("/")
         copy_tree(
             src=os.path.join(_dataset_path, cat, instance),
-            dst=os.path.join(_binvox_path, cat, instance),
+            dst=os.path.join(_target_path, cat, instance),
         )
