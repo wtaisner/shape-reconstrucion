@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.RecGAN import RecGAN
-from src.shapenet_dataset import ShapeNetDataset
+from src.RecGAN.shapenet_dataset import ShapeNetDataset
 from src.utils import read_config, calculate_gradient_penalty
 
 
