@@ -6,7 +6,7 @@ from typing import Iterable, Tuple
 import numpy as np
 import pandas as pd
 
-dataset_path = "../data/images_vox32_10_views/shapenet"
+dataset_path = "../data/images_vox32_10_views_enhanced/shapenet"
 num_views = 10
 
 
@@ -92,6 +92,6 @@ train_set, test_set = split_categories(train_test_categories, train_set, test_se
 train_set, eval_set = split_categories(train_eval_categories, train_set, eval_set, num_views)
 test_set, eval_set = split_categories(test_eval_categories, test_set, eval_set, num_views)
 
-train_set.to_csv("../train_test_splits/train_vox32_10_views.csv", sep=';')
-test_set.to_csv("../train_test_splits/test_vox32_10_views.csv", sep=';')
-eval_set.to_csv("../train_test_splits/eval_vox32_10_views.csv", sep=';')
+train_set.to_csv("../train_test_splits/train_vox32_10_views_enhanced.csv", sep=';')
+test_set.to_csv("../train_test_splits/test_vox32_10_views_enhanced.csv", sep=';')
+eval_set.to_csv("../train_test_splits/eval_vox32_10_views_enhanced.csv", sep=';')

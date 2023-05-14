@@ -23,7 +23,7 @@ def seed_worker(worker_id):
 
 
 if __name__ == '__main__':
-    weights_path = '../outputs/checkpoints/2023-05-06T13:54:20.547642/best-ckpt.pth'
+    weights_path = '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
 
     cfg = read_config("../config/pix2vox.yaml")
     wandb.init(

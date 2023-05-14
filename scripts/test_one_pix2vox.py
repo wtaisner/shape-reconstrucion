@@ -22,9 +22,9 @@ def seed_worker(worker_id):
 
 
 if __name__ == '__main__':
-    depth_path = '03636649/depth/927e0654427c4d0b82241d99b4e87f38_1680001.png'
-    weights_path = '../outputs/checkpoints/2023-05-06T13:54:20.547642/best-ckpt.pth'
-    visualize = False
+    depth_path = '04379243/depth/ee00ed62953f4bd280afdc8bd41edec3_2160001.png'
+    weights_path = '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
+    visualize = True
 
     cfg = read_config("../config/pix2vox.yaml")
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                 refiner_loss = encoder_loss
 
             if visualize:
-                compare_generated_gt(generated_volume, gt_volumes)
+                compare_generated_gt(generated_volume, gt_volumes, save_path=f"prediction_{depth_path.replace('/', '_')}")
 
             test_encoder_losses.update(encoder_loss.item())
             test_refiner_losses.update(refiner_loss.item())

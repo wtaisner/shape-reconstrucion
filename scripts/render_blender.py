@@ -223,7 +223,6 @@ def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: 
     """
     np.random.seed(23)
     all_models = glob.glob(input_models_path + '/*/*/*/*.obj')
-    # bpy.ops.wm.read_factory_settings(use_empty=True)
 
     chunks = (len(all_models) - 1) // 1000 + 1
     for i in range(chunks):
@@ -244,53 +243,51 @@ def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: 
         gc.collect()
 
 
-def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):
-    """
-    Creates train, validation and test datasets
-    :param input_models_path: path containing all models from shapenet
-    :param num_views_per_obj: number of views (images) for a given object
-    :param output_path: path where all 3 datasets should be saved
-    :param split: list of ratios between train, val and test, e.g. [0.7, 0.1, 0.2]
-    :param kwargs: additional parameters, passed to function render_obj
-    """
-    # TODO: think about reasonable splitting criterion
-    np.random.seed(23)
-    split = np.array(split)
-    all_models = glob.glob(input_models_path + '/*')
-    num_all_models = len(all_models)
-    all_models = np.random.permutation(all_models)
-
-    if np.sum(split) != 1:
-        split /= np.sum(split)
-
-    train_size = int(num_all_models * split[0])
-    val_size = int(num_all_models * split[1])
-
-    train_models = all_models[:train_size]
-    val_models = all_models[train_size: train_size + val_size]
-    test_models = all_models[train_size + val_size:]
-
-    train_models = [glob.glob(t + '/*/*/*.obj') for t in train_models]
-    train_models = sum(train_models, [])
-    val_models = [glob.glob(t + '/*/*/*.obj') for t in val_models]
-    val_models = sum(val_models, [])
-    test_models = [glob.glob(t + '/*/*/*.obj') for t in test_models]
-    test_models = sum(test_models, [])
-    # TODO: implement multiprocessing
-    for entry in [(train_models, 'train'), (val_models, 'val'), (test_models, 'test')]:
-        objs, name = entry
-        output_path_name = os.path.join(output_path, name)
-        for obj in objs:
-            # print(obj)
-            render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
+# def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):
+#     """
+#     Creates train, validation and test datasets
+#     :param input_models_path: path containing all models from shapenet
+#     :param num_views_per_obj: number of views (images) for a given object
+#     :param output_path: path where all 3 datasets should be saved
+#     :param split: list of ratios between train, val and test, e.g. [0.7, 0.1, 0.2]
+#     :param kwargs: additional parameters, passed to function render_obj
+#     """
+#     # TODO: think about reasonable splitting criterion
+#     np.random.seed(23)
+#     split = np.array(split)
+#     all_models = glob.glob(input_models_path + '/*')
+#     num_all_models = len(all_models)
+#     all_models = np.random.permutation(all_models)
+#
+#     if np.sum(split) != 1:
+#         split /= np.sum(split)
+#
+#     train_size = int(num_all_models * split[0])
+#     val_size = int(num_all_models * split[1])
+#
+#     train_models = all_models[:train_size]
+#     val_models = all_models[train_size: train_size + val_size]
+#     test_models = all_models[train_size + val_size:]
+#
+#     train_models = [glob.glob(t + '/*/*/*.obj') for t in train_models]
+#     train_models = sum(train_models, [])
+#     val_models = [glob.glob(t + '/*/*/*.obj') for t in val_models]
+#     val_models = sum(val_models, [])
+#     test_models = [glob.glob(t + '/*/*/*.obj') for t in test_models]
+#     test_models = sum(test_models, [])
+#     # TODO: implement multiprocessing
+#     for entry in [(train_models, 'train'), (val_models, 'val'), (test_models, 'test')]:
+#         objs, name = entry
+#         output_path_name = os.path.join(output_path, name)
+#         for obj in objs:
+#             # print(obj)
+#             render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
 
 
 if __name__ == '__main__':
-    input_path = '/home/witold/Cargo/ShapeNetVox32_intersection_shapenet_full_sample_0.2/'
+    input_path = '/home/witold/Cargo/ShapeNetVox32_sample_0.5_added_categories'
     depth_scale = 0.3
     num_views = 10
-    output_path = '../data/images_vox32_10_views_2/'
+    output_path = '../data/images_vox32_10_views_enhanced/'
     name = 'shapenet'
-    train_val_test_split = [0.7, 0.1, 0.2]
     create_dataset(input_path, num_views, output_path, name)
-    # create_datasets(input_path, num_views, output_path, train_val_test_split, depth_scale=depth_scale)
