@@ -5,7 +5,7 @@ Shape reconstruction from RGBD images from ShapeNet dataset.
 ## Milestone X+1 - 19.05.2023
 
 1. Voxel scaling methods and their results are in the `src/voxel_grid_scaling.ipynb` notebook.
-2. We created the following dataset: sampled 50% of the already possessed voxel grids of size 32. Moreover, we took 21
+2. We created the following dataset: sampled 50% of the already possessed voxel grids of size 32 (compared to 20% in the previous experiments). Moreover, we took 21
    small categories from the original ShapeNet, downsampled voxel grids from 128 to 32.
 3. We trained the model on the dataset from point 2.
 4. For the best model:
