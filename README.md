@@ -8,7 +8,16 @@ Shape reconstruction from RGBD images from ShapeNet dataset.
 
 | Animations | Category |
 |------------|----------|
- |            |          |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/941920fd-0673-438b-ae26-22edce5bc3f0    | bag        |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/87831403-c0dc-4f26-aa9b-d051569937cc    | camera     |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/d2d6faf8-615a-4a88-b421-3fe4ca9ad309    | cap        |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/1c009e67-ddf2-4a27-9d87-52d40fa85a2a    | car        |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/8931a628-ea2e-4aad-92be-b891a6ce4c58    | dishwasher |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/4ec3c516-bb5b-4784-8e10-108816c1a5a8    | table      |
+ |  https://github.com/wtaisner/shape-reconstruction/assets/61318908/60e78f8f-5729-4b31-a528-840dbcda310f    | tower      |
+
+
+
 ## Milestone X+1 - 19.05.2023
 
 1. Voxel scaling methods and their results are in the `src/voxel_grid_scaling.ipynb` notebook.
