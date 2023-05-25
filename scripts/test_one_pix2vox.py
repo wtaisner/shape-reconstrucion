@@ -22,7 +22,15 @@ def seed_worker(worker_id):
 
 
 if __name__ == '__main__':
-    depth_path = '04379243/depth/ee00ed62953f4bd280afdc8bd41edec3_2160001.png'
+    depth_paths = [
+        # '04379243/depth/ee00ed62953f4bd280afdc8bd41edec3_2160001.png',
+        # "02773838/depth/766fe076d4cdef8cf0117851f0671fde_0360001.png",
+        # "02942699/depth/935fc76352a4d5fd72a90fe1ba02202a_2880001.png",
+        # "02954340/depth/d7de36db04c61722a52821bf1aa3b19a_2520001.png",
+        # "02958343/depth/e9233510c6e0f2672a9eb0f146e94477_1440001.png",
+        "03207941/depth/d6b3d8434fc41179db4c5469c0c1ba80_2880001.png",
+        "04460130/depth/fe5ca50ef83ab52438cd8eb23853c009_0720001.png"
+    ]
     weights_path = '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
     visualize = True
 
@@ -38,93 +46,93 @@ if __name__ == '__main__':
         data_transforms.Normalize(mean=cfg['dataset']['mean'], std=cfg['dataset']['std']),
         data_transforms.ToTensor(),
     ])
+    for depth_path in depth_paths:
+        test_dataset = ShapeNetDataset([depth_path], cfg['dataset']['img_path'],
+                                       cfg['dataset']['models_path'], test_transforms)
 
-    test_dataset = ShapeNetDataset([depth_path], cfg['dataset']['img_path'],
-                                   cfg['dataset']['models_path'], test_transforms)
+        g_test = torch.Generator()
+        g_test.manual_seed(42)
+        test_dataloader = DataLoader(
+            dataset=test_dataset,
+            batch_size=1,
+            num_workers=cfg["train_params"]["num_workers"],
+            worker_init_fn=seed_worker,
+            generator=g_test,
+            shuffle=False
+        )
 
-    g_test = torch.Generator()
-    g_test.manual_seed(42)
-    test_dataloader = DataLoader(
-        dataset=test_dataset,
-        batch_size=1,
-        num_workers=cfg["train_params"]["num_workers"],
-        worker_init_fn=seed_worker,
-        generator=g_test,
-        shuffle=False
-    )
+        encoder = Encoder(cfg['network'])
+        decoder = Decoder(cfg['network'])
+        refiner = Refiner(cfg['network'])
+        merger = Merger(cfg['network'])
 
-    encoder = Encoder(cfg['network'])
-    decoder = Decoder(cfg['network'])
-    refiner = Refiner(cfg['network'])
-    merger = Merger(cfg['network'])
+        print('[DEBUG] %s Parameters in Encoder: %d.' % (dt.now(), network_utils.count_parameters(encoder)))
+        print('[DEBUG] %s Parameters in Decoder: %d.' % (dt.now(), network_utils.count_parameters(decoder)))
+        print('[DEBUG] %s Parameters in Refiner: %d.' % (dt.now(), network_utils.count_parameters(refiner)))
+        print('[DEBUG] %s Parameters in Merger: %d.' % (dt.now(), network_utils.count_parameters(merger)))
 
-    print('[DEBUG] %s Parameters in Encoder: %d.' % (dt.now(), network_utils.count_parameters(encoder)))
-    print('[DEBUG] %s Parameters in Decoder: %d.' % (dt.now(), network_utils.count_parameters(decoder)))
-    print('[DEBUG] %s Parameters in Refiner: %d.' % (dt.now(), network_utils.count_parameters(refiner)))
-    print('[DEBUG] %s Parameters in Merger: %d.' % (dt.now(), network_utils.count_parameters(merger)))
+        encoder.apply(network_utils.init_weights)
+        decoder.apply(network_utils.init_weights)
+        refiner.apply(network_utils.init_weights)
+        merger.apply(network_utils.init_weights)
 
-    encoder.apply(network_utils.init_weights)
-    decoder.apply(network_utils.init_weights)
-    refiner.apply(network_utils.init_weights)
-    merger.apply(network_utils.init_weights)
+        encoder.to(device)
+        decoder.to(device)
+        refiner.to(device)
+        merger.to(device)
 
-    encoder.to(device)
-    decoder.to(device)
-    refiner.to(device)
-    merger.to(device)
+        bce_loss = torch.nn.BCELoss()
 
-    bce_loss = torch.nn.BCELoss()
+        print('[INFO] %s Recovering from %s ...' % (dt.now(), cfg['train_params']['weights']))
+        checkpoint = torch.load(weights_path)
+        encoder.load_state_dict(checkpoint['encoder_state_dict'])
+        decoder.load_state_dict(checkpoint['decoder_state_dict'])
+        if cfg['network']['use_refiner']:
+            refiner.load_state_dict(checkpoint['refiner_state_dict'])
+        if cfg['network']['use_merger']:
+            merger.load_state_dict(checkpoint['merger_state_dict'])
 
-    print('[INFO] %s Recovering from %s ...' % (dt.now(), cfg['train_params']['weights']))
-    checkpoint = torch.load(weights_path)
-    encoder.load_state_dict(checkpoint['encoder_state_dict'])
-    decoder.load_state_dict(checkpoint['decoder_state_dict'])
-    if cfg['network']['use_refiner']:
-        refiner.load_state_dict(checkpoint['refiner_state_dict'])
-    if cfg['network']['use_merger']:
-        merger.load_state_dict(checkpoint['merger_state_dict'])
+        encoder.eval()
+        decoder.eval()
+        refiner.eval()
+        merger.eval()
 
-    encoder.eval()
-    decoder.eval()
-    refiner.eval()
-    merger.eval()
+        test_ious = []
+        test_encoder_losses = network_utils.AverageMeter()
+        test_refiner_losses = network_utils.AverageMeter()
 
-    test_ious = []
-    test_encoder_losses = network_utils.AverageMeter()
-    test_refiner_losses = network_utils.AverageMeter()
+        for batch_idx, (taxonomy_names, sample_names, imgs, gt_volumes) in enumerate(
+                test_dataloader):
 
-    for batch_idx, (taxonomy_names, sample_names, imgs, gt_volumes) in enumerate(
-            test_dataloader):
+            with torch.no_grad():
+                imgs = imgs.to(device)
+                gt_volumes = gt_volumes.to(device)
 
-        with torch.no_grad():
-            imgs = imgs.to(device)
-            gt_volumes = gt_volumes.to(device)
+                # Test the encoder, decoder, refiner and merger
+                image_features = encoder(imgs)
+                raw_features, generated_volume = decoder(image_features)
 
-            # Test the encoder, decoder, refiner and merger
-            image_features = encoder(imgs)
-            raw_features, generated_volume = decoder(image_features)
+                if cfg['network']['use_merger']:
+                    generated_volume = merger(raw_features, generated_volume)
+                else:
+                    generated_volume = torch.mean(generated_volume, dim=1)
+                encoder_loss = bce_loss(generated_volume, gt_volumes) * 10
 
-            if cfg['network']['use_merger']:
-                generated_volume = merger(raw_features, generated_volume)
-            else:
-                generated_volume = torch.mean(generated_volume, dim=1)
-            encoder_loss = bce_loss(generated_volume, gt_volumes) * 10
+                if cfg['network']['use_refiner']:
+                    generated_volume = refiner(generated_volume)
+                    refiner_loss = bce_loss(generated_volume, gt_volumes) * 10
+                else:
+                    refiner_loss = encoder_loss
 
-            if cfg['network']['use_refiner']:
-                generated_volume = refiner(generated_volume)
-                refiner_loss = bce_loss(generated_volume, gt_volumes) * 10
-            else:
-                refiner_loss = encoder_loss
+                if visualize:
+                    compare_generated_gt(generated_volume, gt_volumes, save_path=f"prediction_{depth_path.replace('/', '_')}")
 
-            if visualize:
-                compare_generated_gt(generated_volume, gt_volumes, save_path=f"prediction_{depth_path.replace('/', '_')}")
+                test_encoder_losses.update(encoder_loss.item())
+                test_refiner_losses.update(refiner_loss.item())
 
-            test_encoder_losses.update(encoder_loss.item())
-            test_refiner_losses.update(refiner_loss.item())
-
-            for th in cfg['test_params']['voxel_thr']:
-                _volume = torch.ge(generated_volume, th).float()
-                intersection = torch.sum(_volume.mul(gt_volumes)).float()
-                union = torch.sum(torch.ge(_volume.add(gt_volumes), 1)).float()
-                test_ious.append((intersection / union).tolist())
-        print(test_ious)
+                for th in cfg['test_params']['voxel_thr']:
+                    _volume = torch.ge(generated_volume, th).float()
+                    intersection = torch.sum(_volume.mul(gt_volumes)).float()
+                    union = torch.sum(torch.ge(_volume.add(gt_volumes), 1)).float()
+                    test_ious.append((intersection / union).tolist())
+            print(test_ious)

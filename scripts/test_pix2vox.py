@@ -12,7 +12,6 @@ from src.Pix2Vox.models.merger import Merger
 from src.Pix2Vox.models.refiner import Refiner
 from src.Pix2Vox.shapenet_dataset import ShapeNetDataset
 from src.Pix2Vox.utils import data_transforms, network_utils
-from src.Pix2Vox.utils.binvox_visualization import compare_generated_gt
 from src.utils import read_config
 
 
@@ -32,7 +31,7 @@ if __name__ == '__main__':
         project="shape-reconstruction",
         # track hyperparameters and run metadata
         config=cfg,
-        name="test-run-18"
+        name="test-run-29"
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cpu = torch.device("cpu")
