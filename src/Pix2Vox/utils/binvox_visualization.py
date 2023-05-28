@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 #
 # Developed by Haozhe Xie <cshzxie@gmail.com>
-
-import cv2
+# Adapted from: https://github.com/hzxie/Pix2Vox
 import matplotlib.pyplot as plt
-import os
+import torch
 
 from matplotlib import animation
-from mpl_toolkits.mplot3d import Axes3D
 
 plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
 
@@ -25,7 +23,14 @@ def get_volume_views(volume, save_path):
     plt.close()
 
 
-def compare_generated_gt(generated_volume, gt_volume, save_path=None):
+def compare_generated_gt(generated_volume: torch.tensor, gt_volume: torch.tensor, save_path=None) -> None:
+    """
+    Compare generated and ground truth volumes for voxel grids. Generates a plot and an animation. Saves output
+    if save_path is not None.
+    :param generated_volume: representation of the generated volume
+    :param gt_volume: representation of the ground truth volume
+    :param save_path: save path for the plot and animation
+    """
     generated_volume = generated_volume.squeeze().__ge__(0.5)
     gt_volume = gt_volume.squeeze().__ge__(0.5)
 

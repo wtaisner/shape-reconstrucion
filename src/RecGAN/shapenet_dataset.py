@@ -1,3 +1,6 @@
+"""
+This file contains the ShapeNetDataset class, which is used to load the ShapeNet dataset for the RecGAN model.
+"""
 import os.path
 import pathlib
 
@@ -6,7 +9,6 @@ import pandas as pd
 import torch
 from PIL import Image
 from matplotlib import pyplot as plt
-import multiprocessing as mp
 from torch.utils.data import Dataset
 
 
@@ -33,8 +35,6 @@ class ShapeNetDataset(Dataset):
         depth = Image.open(os.path.join(self.data_path, depth_path)).convert("L")
         depth = np.asarray(depth, dtype=np.float32)
         depth /= 255.0
-        # plt.imshow(depth, cmap='gray')
-        # plt.show()
 
         h = depth.shape[0]
         w = depth.shape[1]
@@ -42,9 +42,6 @@ class ShapeNetDataset(Dataset):
         fov = 49.124 / 2  # degree
         fx = w / (2.0 * np.tan(fov / 180.0 * np.pi))
         fy = h / (2.0 * np.tan(fov / 180.0 * np.pi))
-        # k = np.array([[fx, 0, w / 2],
-        #               [0, fy, h / 2],
-        #               [0, 0, 1]], dtype=np.float32)
 
         xyz_pc = []
         for hi in range(h):
@@ -169,14 +166,4 @@ class ShapeNetDataset(Dataset):
         voxel_path = rgb_path.replace("/rgb/", "/voxel/")
         voxel_path = voxel_path.replace(".png", ".npz")
         voxel_grid = np.load(os.path.join(self.voxel_path, voxel_path))['arr_0']
-        # self.plot_from_voxels(voxel_grid)
         return torch.tensor(voxel_grid)
-
-
-if __name__ == "__main__":
-    dataset = ShapeNetDataset("../train_test_splits/eval_0.001.csv")
-    # n = 10  # chunk row size
-    # list_df = [dataset.data[i:i + n] for i in range(0, dataset.data.shape[0], n)]
-    # with mp.Pool(mp.cpu_count()) as pool:
-    #     pool.map(dataset.save_voxels, list_df)
-    print(dataset.__getitem__(5).shape)

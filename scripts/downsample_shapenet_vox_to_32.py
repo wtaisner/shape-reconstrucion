@@ -1,3 +1,6 @@
+"""
+A utility script to downsample the ShapeNet dataset to 32x32x32 resolution.
+"""
 from typing import Union
 
 import numpy as np
@@ -8,13 +11,20 @@ import multiprocessing as mp
 
 from src.Pix2Vox.utils import binvox_rw
 from src.Pix2Vox.utils.binvox_rw import Voxels
+from src.utils import read_config
 
-_dataset_path = "/home/witold/Cargo/ShapeNetTmp"  # datasets to take binvox files from
-_target_dataset_path = "/home/witold/Cargo/ShapeNetVox32_sample_0.5_enhanced"  # dataset to save binvox files to
+
+cfg = read_config("../config/downsample_voxel_grid.yaml")
 
 
 def down_sample(volume_path: Union[str, os.PathLike]) -> None:
-    with open(os.path.join(_dataset_path, volume_path), 'rb') as f:
+    """
+    Downsamples a single binvox file to 32x32x32 resolution. It uses RegularGridInterpolator from scipy, as indicated
+    by tests performed in `src/voxel_grid_scaling.ipynb` notebook.
+    :param volume_path: pathlike object pointing to a binvox file
+    :return: None, saves a new binvox file under cfg["target_dataset_path"]
+    """
+    with open(os.path.join(cfg["dataset_path"], volume_path), 'rb') as f:
         volume = binvox_rw.read_as_3d_array(f)
         volume = volume.data.astype(np.float32)
 
@@ -26,7 +36,7 @@ def down_sample(volume_path: Union[str, os.PathLike]) -> None:
     new_grid = np.moveaxis(new_grid, (0, 1, 2, 3), (3, 0, 1, 2))  # reorder axes for evaluation
     new_values = f(new_grid)
     new_values = Voxels(new_values, new_values.shape, (0, 0, 0), 0, "xyz")
-    save_path = os.path.join(_target_dataset_path, *volume_path.split("/")[:-2])
+    save_path = os.path.join(cfg["target_dataset_path"], *volume_path.split("/")[:-2])
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     binvox_rw.write(new_values, open(os.path.join(save_path, "model.binvox"), 'wb'))
@@ -34,6 +44,6 @@ def down_sample(volume_path: Union[str, os.PathLike]) -> None:
 
 if __name__ == "__main__":
     imgs_instances = ["/".join(x.split("/")[-4:]) for x in
-                      glob.glob(f"{_dataset_path}/*/*/*/*.solid.binvox", recursive=True)]
+                      glob.glob(f"{cfg['dataset_path']}/*/*/*/*.solid.binvox", recursive=True)]
     with mp.Pool(mp.cpu_count() // 2) as pool:
         pool.map(down_sample, imgs_instances)

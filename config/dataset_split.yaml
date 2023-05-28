@@ -1,0 +1,11 @@
+dataset_path: "../data/images_vox32_10_views_enhanced/shapenet"  # path to the dataset containing RGBD images
+num_views: 10  # number of views per object
+
+# entire categories assigned to sets
+train_categories: 0.6
+test_categories: 0.15
+validation_categories : 0.1
+# categories divided between particular sets
+train_test : 0.05
+train_eval : 0.05
+test_eval : 0.05

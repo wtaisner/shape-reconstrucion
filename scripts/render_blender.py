@@ -1,11 +1,13 @@
+import gc
 import glob
 import math
-import os
 import multiprocessing as mp
-from typing import List
-import gc
+import os
+
 import bpy
 import numpy as np
+
+from src.utils import read_config
 
 
 def render_obj(
@@ -214,7 +216,7 @@ def render_obj(
 
 def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: str, name: str, **kwargs):
     """
-    Creates one dataset
+    Creates one dataset. The files are processed in batches, each batch is parsed in a distributed manner.
     :param input_models_path: path containing all models from shapenet
     :param num_views_per_obj: number of views (images) for a given object
     :param output_path: path where the whole dataset should be saved
@@ -232,62 +234,21 @@ def create_dataset(input_models_path: str, num_views_per_obj: int, output_path: 
         tmp_paths = [output_path_name for _ in range(len(batch))]
         tmp_num_views = [num_views_per_obj for _ in range(len(batch))]
 
-        # ===== slow version =====
+        # ===== single thread version =====
         # for obj in all_models:
         #     print(obj)
         #     render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
 
-        # ===== funny version ======
+        # ===== distributed version ======
         with mp.Pool(processes=mp.cpu_count() // 2) as pool:
             pool.starmap(render_obj, zip(batch, tmp_num_views, tmp_paths, **kwargs))
         gc.collect()
 
 
-# def create_datasets(input_models_path: str, num_views_per_obj: int, output_path: str, split: List, **kwargs):
-#     """
-#     Creates train, validation and test datasets
-#     :param input_models_path: path containing all models from shapenet
-#     :param num_views_per_obj: number of views (images) for a given object
-#     :param output_path: path where all 3 datasets should be saved
-#     :param split: list of ratios between train, val and test, e.g. [0.7, 0.1, 0.2]
-#     :param kwargs: additional parameters, passed to function render_obj
-#     """
-#     # TODO: think about reasonable splitting criterion
-#     np.random.seed(23)
-#     split = np.array(split)
-#     all_models = glob.glob(input_models_path + '/*')
-#     num_all_models = len(all_models)
-#     all_models = np.random.permutation(all_models)
-#
-#     if np.sum(split) != 1:
-#         split /= np.sum(split)
-#
-#     train_size = int(num_all_models * split[0])
-#     val_size = int(num_all_models * split[1])
-#
-#     train_models = all_models[:train_size]
-#     val_models = all_models[train_size: train_size + val_size]
-#     test_models = all_models[train_size + val_size:]
-#
-#     train_models = [glob.glob(t + '/*/*/*.obj') for t in train_models]
-#     train_models = sum(train_models, [])
-#     val_models = [glob.glob(t + '/*/*/*.obj') for t in val_models]
-#     val_models = sum(val_models, [])
-#     test_models = [glob.glob(t + '/*/*/*.obj') for t in test_models]
-#     test_models = sum(test_models, [])
-#     # TODO: implement multiprocessing
-#     for entry in [(train_models, 'train'), (val_models, 'val'), (test_models, 'test')]:
-#         objs, name = entry
-#         output_path_name = os.path.join(output_path, name)
-#         for obj in objs:
-#             # print(obj)
-#             render_obj(obj, num_views_per_obj, output_path_name, **kwargs)
-
-
 if __name__ == '__main__':
-    input_path = '/home/witold/Cargo/ShapeNetVox32_sample_0.5_added_categories'
-    depth_scale = 0.3
-    num_views = 10
-    output_path = '../data/images_vox32_10_views_enhanced/'
-    name = 'shapenet'
-    create_dataset(input_path, num_views, output_path, name)
+    cfg = read_config("../config/render_blender.yaml")
+    input_path = cfg['input_path']
+    depth_scale = cfg['depth_scale']
+    num_views = cfg['num_views']
+    output_path = cfg['output_path']
+    create_dataset(input_path, num_views, output_path, 'shapenet')

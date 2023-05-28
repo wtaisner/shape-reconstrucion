@@ -1,0 +1,3 @@
+dataset_path: "/home/witold/Cargo/ShapeNetCore.v2"
+sample_percent: 0.1  # percentage of files to copy
+destination_path: "/home/witold/Cargo/ShapeNetCore"

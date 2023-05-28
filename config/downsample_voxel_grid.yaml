@@ -1,0 +1,2 @@
+dataset_path: "/home/witold/Cargo/ShapeNetTmp"  # datasets to take binvox files from
+target_dataset_path: "/home/witold/Cargo/ShapeNetVox32_sample_0.5_enhanced"  # dataset to save binvox files to

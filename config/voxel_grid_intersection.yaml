@@ -1,0 +1,3 @@
+dataset_path: "/home/witold/Cargo/ShapeNetCore.v2"
+binvox_path: "/home/witold/Cargo/ShapeNetVox32_sample_0.5_enhanced"
+target_path: "/home/witold/Cargo/ShapeNetVox32_sample_0.5_added_categories"

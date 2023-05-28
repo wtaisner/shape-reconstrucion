@@ -1,0 +1,4 @@
+input_path: "/home/witold/Cargo/ShapeNetVox32_sample_0.5_added_categories"
+depth_scale: 0.3
+num_views: 10
+output_path: "../data/images_vox32_10_views_enhanced/"
