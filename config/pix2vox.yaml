@@ -51,3 +51,6 @@ test_params:
   'voxel_thr': [0.2, 0.3, 0.4, 0.5]
   transform:
     random_bg_color_range: [[240, 240], [240, 240], [240, 240]]
+# visualization params
+weights_path: '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
+visualize: True

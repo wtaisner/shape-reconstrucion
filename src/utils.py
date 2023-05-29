@@ -1,5 +1,7 @@
+import random
 from typing import Dict
 
+import numpy as np
 import torch
 import yaml
 
@@ -10,7 +12,18 @@ def read_config(path: str) -> Dict:
     return cfg
 
 
-def calculate_gradient_penalty(model, real_images, fake_images, device):
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
+def calculate_gradient_penalty(
+        model: torch.nn.Module,
+        real_images: torch.Tensor,
+        fake_images: torch.Tensor,
+        device: torch.device
+) -> torch.Tensor:
     """
     Source: https://github.com/Lornatang/WassersteinGAN_GP-PyTorch/blob/master/wgangp_pytorch/utils.py#L39
     Calculates the gradient penalty loss for WGAN GP

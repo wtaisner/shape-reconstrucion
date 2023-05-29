@@ -1,20 +1,10 @@
-import random
-
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.RecGAN import RecGAN
 from src.RecGAN.shapenet_dataset import ShapeNetDataset
-from src.utils import read_config, calculate_gradient_penalty
-
-
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2 ** 32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
-
+from src.utils import read_config, calculate_gradient_penalty, seed_worker
 
 if __name__ == "__main__":
     torch.manual_seed(23)
@@ -46,7 +36,7 @@ if __name__ == "__main__":
         shuffle=True
     )
 
-    model = RecGAN().to(device)  # TODO Future: add channels argument
+    model = RecGAN().to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=float(config["lr"]),
@@ -61,11 +51,9 @@ if __name__ == "__main__":
         model.train()
         for idx, batch in tqdm(enumerate(train_dataloader), total=len(train_dataloader), desc="Training ", leave=False, position=1):
             batch = batch.to(device)
-            # TODO: determine how to properly train both discriminator and generator
 
             # train generator
             generator_predictions = model(batch)
-            # loss_generator TODO: can be substituted by BCELoss with weights, if you know how to set them XD
             generator_loss = torch.mean(
                 -torch.mean(config['ae_weight'] * batch * torch.log(generator_predictions[0] + 1e-8), dim=1) -
                 torch.mean((1 - config['ae_weight']) * (1 - batch) * torch.log(generator_predictions[0] + 1e-8), dim=1)
@@ -73,9 +61,8 @@ if __name__ == "__main__":
             # train discriminator
             discriminator_predictions = model(generator_predictions[0], batch, train_D=True)
             gradient_penalty = calculate_gradient_penalty(model, batch, generator_predictions[0], device)
-            # TODO: define discriminator loss function
             discriminator_loss = torch.mean(generator_predictions[0]) - torch.mean(batch) + gradient_penalty
-            (generator_loss + discriminator_loss).backward()  # TODO: optionally, backward each loss separately?
+            (generator_loss + discriminator_loss).backward()
 
             optimizer.step()
             optimizer.zero_grad()

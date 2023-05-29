@@ -1,3 +1,6 @@
+"""
+A utility script to create visualizations and animations for a certain predictions.
+"""
 import random
 from datetime import datetime as dt
 
@@ -22,17 +25,16 @@ def seed_worker(worker_id):
 
 
 if __name__ == '__main__':
+    # instances specifically chosen for the inference
     depth_paths = [
-        # '04379243/depth/ee00ed62953f4bd280afdc8bd41edec3_2160001.png',
-        # "02773838/depth/766fe076d4cdef8cf0117851f0671fde_0360001.png",
-        # "02942699/depth/935fc76352a4d5fd72a90fe1ba02202a_2880001.png",
-        # "02954340/depth/d7de36db04c61722a52821bf1aa3b19a_2520001.png",
-        # "02958343/depth/e9233510c6e0f2672a9eb0f146e94477_1440001.png",
+        '04379243/depth/ee00ed62953f4bd280afdc8bd41edec3_2160001.png',
+        "02773838/depth/766fe076d4cdef8cf0117851f0671fde_0360001.png",
+        "02942699/depth/935fc76352a4d5fd72a90fe1ba02202a_2880001.png",
+        "02954340/depth/d7de36db04c61722a52821bf1aa3b19a_2520001.png",
+        "02958343/depth/e9233510c6e0f2672a9eb0f146e94477_1440001.png",
         "03207941/depth/d6b3d8434fc41179db4c5469c0c1ba80_2880001.png",
         "04460130/depth/fe5ca50ef83ab52438cd8eb23853c009_0720001.png"
     ]
-    weights_path = '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
-    visualize = True
 
     cfg = read_config("../config/pix2vox.yaml")
 
@@ -84,7 +86,7 @@ if __name__ == '__main__':
         bce_loss = torch.nn.BCELoss()
 
         print('[INFO] %s Recovering from %s ...' % (dt.now(), cfg['train_params']['weights']))
-        checkpoint = torch.load(weights_path)
+        checkpoint = torch.load(cfg["weights_path"])
         encoder.load_state_dict(checkpoint['encoder_state_dict'])
         decoder.load_state_dict(checkpoint['decoder_state_dict'])
         if cfg['network']['use_refiner']:
@@ -124,7 +126,7 @@ if __name__ == '__main__':
                 else:
                     refiner_loss = encoder_loss
 
-                if visualize:
+                if cfg["visualize"]:
                     compare_generated_gt(generated_volume, gt_volumes, save_path=f"prediction_{depth_path.replace('/', '_')}")
 
                 test_encoder_losses.update(encoder_loss.item())

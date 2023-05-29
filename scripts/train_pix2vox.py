@@ -15,14 +15,7 @@ from src.Pix2Vox.models.merger import Merger
 from src.Pix2Vox.models.refiner import Refiner
 from src.Pix2Vox.shapenet_dataset import ShapeNetDataset
 from src.Pix2Vox.utils import data_transforms, network_utils
-from src.utils import read_config
-
-
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2 ** 32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
-
+from src.utils import read_config, seed_worker
 
 if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True

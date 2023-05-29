@@ -1,4 +1,3 @@
-import random
 from datetime import datetime as dt
 
 import numpy as np
@@ -12,18 +11,9 @@ from src.Pix2Vox.models.merger import Merger
 from src.Pix2Vox.models.refiner import Refiner
 from src.Pix2Vox.shapenet_dataset import ShapeNetDataset
 from src.Pix2Vox.utils import data_transforms, network_utils
-from src.utils import read_config
-
-
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2 ** 32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
-
+from src.utils import read_config, seed_worker
 
 if __name__ == '__main__':
-    weights_path = '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
-
     cfg = read_config("../config/pix2vox.yaml")
     wandb.init(
         # set the wandb project where this run will be logged
@@ -81,7 +71,7 @@ if __name__ == '__main__':
     bce_loss = torch.nn.BCELoss()
 
     print('[INFO] %s Recovering from %s ...' % (dt.now(), cfg['train_params']['weights']))
-    checkpoint = torch.load(weights_path)
+    checkpoint = torch.load(cfg["weights_path"])
     encoder.load_state_dict(checkpoint['encoder_state_dict'])
     decoder.load_state_dict(checkpoint['decoder_state_dict'])
     if cfg['network']['use_refiner']:
