@@ -7,9 +7,9 @@ network:
   n_vox: 32
 #dataset
 dataset:
-    train_data_file: '/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/train_vox32_10_views_enhanced.csv'
-    eval_data_file: '/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/eval_vox32_10_views_enhanced.csv'
-    test_data_file: '/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/test_vox32_10_views_enhanced.csv'
+    train_data_file: '/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/train_vox32_10_new_v2_final.csv'
+    eval_data_file: '/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/eval_vox32_10_new_v2_final.csv'
+    test_data_file: '/home/witold/PycharmProjects/shape-reconstrucion/train_test_splits/test_vox32_10_new_v2_final.csv'
     img_path: '/home/witold/PycharmProjects/shape-reconstrucion/data/images_vox32_10_views_enhanced/shapenet'
     models_path: '/home/witold/Cargo/ShapeNetVox32_sample_0.5_enhanced'
     img_width: 224
@@ -52,5 +52,5 @@ test_params:
   transform:
     random_bg_color_range: [[240, 240], [240, 240], [240, 240]]
 # visualization params
-weights_path: '../outputs/checkpoints/2023-05-13T14:10:32.556590/best-ckpt.pth'
 visualize: True
+weights_path: "/home/witold/PycharmProjects/shape-reconstrucion/outputs/checkpoints/2023-06-10T12:00:19.865426/best-ckpt.pth"

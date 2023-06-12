@@ -2,10 +2,13 @@ dataset_path: "../data/images_vox32_10_views_enhanced/shapenet"  # path to the d
 num_views: 10  # number of views per object
 
 # entire categories assigned to sets
-train_categories: 0.6
-test_categories: 0.15
-validation_categories : 0.1
+train_categories: 0.9
+test_categories: 0.1
+#validation_categories : 0.0
 # categories divided between particular sets
-train_test : 0.05
-train_eval : 0.05
-test_eval : 0.05
+#train_test : 0.05
+#train_eval : 0.05
+#test_eval : 0.05
+category_train_percent: 0.8
+category_test_percent: 0.1
+category_eval_percent: 0.1

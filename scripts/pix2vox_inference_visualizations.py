@@ -27,13 +27,10 @@ def seed_worker(worker_id):
 if __name__ == '__main__':
     # instances specifically chosen for the inference
     depth_paths = [
-        '04379243/depth/ee00ed62953f4bd280afdc8bd41edec3_2160001.png',
-        "02773838/depth/766fe076d4cdef8cf0117851f0671fde_0360001.png",
-        "02942699/depth/935fc76352a4d5fd72a90fe1ba02202a_2880001.png",
-        "02954340/depth/d7de36db04c61722a52821bf1aa3b19a_2520001.png",
-        "02958343/depth/e9233510c6e0f2672a9eb0f146e94477_1440001.png",
-        "03207941/depth/d6b3d8434fc41179db4c5469c0c1ba80_2880001.png",
-        "04460130/depth/fe5ca50ef83ab52438cd8eb23853c009_0720001.png"
+        '03710193/depth/4ef4cdfc65eb235aa26a056a2194a6f0_0000001.png',
+        "02942699/depth/2693df58698a2ca29c723bc28575d785_2880001.png",
+        "03085013/depth/1e11af6fa598cd6960113b959388060d_0360001.png",
+        "04004475/depth/83c3034992c6afbca0622b21d729afbc_2160001.png",
     ]
 
     cfg = read_config("../config/pix2vox.yaml")
